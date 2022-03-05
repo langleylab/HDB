@@ -45,10 +45,12 @@ HDB(
 \item{verbose}{logical, should the function return updates on its progress? This includes progress bars for parallel processing. Default is FALSE.}
 }
 \value{
-a named list of results, one for each element of \code{group}, each list containing another list with the following items:
- * \code{model}: a list of linear models, one for every pairwise pHD calculation within the group
- * \code{results}: a data frame of pHD results, containing the pHD value and the number of standard deviations from the linear model (\code{sigmas})
- * \code{null}: a list of null pHD distributions, one for every relative proportion within the group
+The function returns a named list of results, one for each element of \code{group}, each list containing another list with the following items:
+ \itemize{
+ \item{\code{model}}: a list of linear models, one for every pairwise pHD calculation within the group
+ \item{\code{results}}: a data frame of pHD results, containing the pHD value and the number of standard deviations from the linear model (\code{sigmas})
+ \item{\code{null}}: a list of null pHD distributions, one for every relative proportion within the group
+}
 }
 \description{
 Calculates the pairwise batch effect using the robust partial Hausdorff distance

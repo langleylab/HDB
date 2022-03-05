@@ -21,6 +21,8 @@ hdb <- HDB(sce,
            verbose = TRUE,
            doplot = FALSE)
 ```           
+
+For all the arugments, check the manual with `?HDB`.
            
 ### Short tutorial
 

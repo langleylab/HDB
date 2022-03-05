@@ -40,11 +40,12 @@
 #' @importFrom stats lm predict residuals sd
 #' @importFrom utils combn
 #'
-#' @return a named list of results, one for each element of \code{group}, each list containing another list with the following items:
-#'  * \code{model}: a list of linear models, one for every pairwise pHD calculation within the group
-#'  * \code{results}: a data frame of pHD results, containing the pHD value and the number of standard deviations from the linear model (\code{sigmas})
-#'  * \code{null}: a list of null pHD distributions, one for every relative proportion within the group
-#'
+#' @return The function returns a named list of results, one for each element of \code{group}, each list containing another list with the following items:
+#'  \itemize{
+#'  \item{\code{model}}: a list of linear models, one for every pairwise pHD calculation within the group
+#'  \item{\code{results}}: a data frame of pHD results, containing the pHD value and the number of standard deviations from the linear model (\code{sigmas})
+#'  \item{\code{null}}: a list of null pHD distributions, one for every relative proportion within the group
+#' }
 #' @export
 
 HDB <- function(sce,
@@ -222,7 +223,7 @@ HDB <- function(sce,
   }
   if(doplot) {
 
-    plotHDheatmap(hdb = results,
+    plotHDSigmas(hdb = results,
                  group = g)
   }
 
@@ -288,7 +289,7 @@ plotHDheatmap <- function(hdb, group, rng = NULL) {
 #' @param hdb the result of \code{HDB()}
 #' @param group character containing the name of the \code{HDB} results list
 #' @param rng vector containing a range in the form \code{c(a, b)} where \code{a} and \code{b} contain the lower and upper bound of the scale.
-#'   Used to compare different heatmaps using the same scale.
+#'   Used to compare different barplots using the same scale.
 #'
 #' @return a pyramid barplot with pairwise sigma values for the HDB calculation within \code{group}.
 #'
