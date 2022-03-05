@@ -8,6 +8,20 @@ For the time being, clone the repo, go to the repo directory and launch R (or `s
 
 There, use `devtools::load_all()` to load the package.
 
+### Usage
+
+The package contains one main function, `HDB()`, and two plotting functions (see below). 
+
+To run `HDB()` you need a `SingleCellExperiment` object (`sce`) for which there is batch information in the `colData(sce)` slot and a dimensionality reduction is already present in `reducedDim(sce)`. Parallelization is possible through `BiocParallel`. 
+
+```{r}
+hdb <- HDB(sce,  
+           group = "batch", 
+           q = 4,
+           verbose = TRUE,
+           doplot = FALSE)
+```           
+           
 ### Short tutorial
 
 Here is a simple demonstration on how to use `HDB`. 
