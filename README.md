@@ -2,6 +2,12 @@
 
 ## Hausdorff Distance of Batches
 
+### Installation
+
+For the time being, clone the repo, go to the repo directory and launch R (or `setwd()` from R). 
+There, use `devtools::load_all()` to load the package.
+
+### Short tutorial
 
 Here is a simple demonstration on how to use `HDB`. 
 
