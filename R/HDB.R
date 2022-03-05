@@ -222,14 +222,14 @@ HDB <- function(sce,
   }
   if(doplot) {
 
-    plotHdSigmas(hdb = results,
+    plotHDheatmap(hdb = results,
                  group = g)
   }
 
   return(results)
 }
 
-#' Plot HDB sigmas
+#' Plot HDB sigmas (heatmap)
 #'
 #' Plots the sigma values for every HDB comparison in a heatmap
 #'
@@ -245,7 +245,7 @@ HDB <- function(sce,
 #' @export
 
 
-plotHdSigmas <- function(hdb, group, rng = NULL) {
+plotHDheatmap <- function(hdb, group, rng = NULL) {
 
   current = hdb[[group]]
 
@@ -278,4 +278,57 @@ plotHdSigmas <- function(hdb, group, rng = NULL) {
 
   print(p)
 
+}
+
+
+#' Plot HDB sigmas
+#'
+#' Plots the sigma values for every HDB comparison in a pyramid barplot
+#'
+#' @param hdb the result of \code{HDB()}
+#' @param group character containing the name of the \code{HDB} results list
+#' @param rng vector containing a range in the form \code{c(a, b)} where \code{a} and \code{b} contain the lower and upper bound of the scale.
+#'   Used to compare different heatmaps using the same scale.
+#'
+#' @return a pyramid barplot with pairwise sigma values for the HDB calculation within \code{group}.
+#'
+#' @importFrom ggplot2 ggplot geom_hline aes_string geom_bar theme theme_minimal ggtitle coord_flip element_text scale_y_continuous xlab
+#' @importFrom stats reorder
+#'
+#' @export
+
+plotHDsigmas <- function(hdb, group, rng = NULL) {
+
+  current = hdb[[group]]
+
+  df = current$results[!is.na(current$results$dist),]
+
+  comparisons = apply(df[,c("from", "to")], 1, function(x) paste(sort(x), collapse = "_"))
+  df$comparison = comparisons
+  df$direction = c("A_B", "B_A")[as.numeric(sapply(names(comparisons), function(x) comparisons[x] == x)) + 1]
+  df$sigmas[df$direction == "A_B"] = -df$sigmas[df$direction == "A_B"]
+  sigma_sum = sapply(unique(df$comparison), function(x) sum(abs(df$sigmas[df$comparison == x])))
+  df$sum = sigma_sum[df$comparison]
+
+  df$comparison = gsub(df$comparison, pattern = "_", replacement = " and ")
+  df$direction = gsub(df$direction, pattern = "_", replacement = " to ")
+
+  if(is.null(rng)) {
+    rng <- rep(max(range(abs(df$sigmas), na.rm = TRUE)), 2) * c(-1, 1)
+  } else {
+    rng <- rep(max(rng), 2) * c(-1, 1)
+  }
+
+  p <- ggplot(df, aes_string(x = reorder(df$comparison, df$sum), y = "sigmas", fill = "direction")) +
+    geom_bar(stat = "identity") +
+    geom_hline(yintercept = 0) +
+    geom_hline(yintercept = c(-3, 3), lty = 2, lwd = 0.5) +
+    theme_minimal()  +
+    scale_y_continuous(breaks = round(seq(rng[1], rng[2], 10)),
+                     labels =  as.character(abs(round(seq(rng[1], rng[2], 10))))) +
+    xlab("Comparisons (A and B)") +
+    ggtitle(paste0("HDB sigmas for group ", group)) +
+    coord_flip()
+
+  print(p)
 }
