@@ -1,5 +1,6 @@
 # HDB
-Hausdorff Distance of Batches
+
+## Hausdorff Distance of Batches
 
 
 Here is a simple demonstration on how to use `HDB`. 
@@ -51,6 +52,8 @@ We plot the PCA colouring by `individual` and shaping by `replicate`:
 ```{r}
 plotPCA(sce, colour_by = "individual", shape_by = "replicate")
 ```
+![p1](https://user-images.githubusercontent.com/21171362/156878560-8fdb6b94-f089-467f-bddf-12d794ba0dc2.png)
+
 
 The batch effect is evident at the individual level and at the replicate level. 
 
@@ -84,6 +87,8 @@ We plot the results:
 plotHDheatmap(hdb, "individual")
 plotHDheatmap(hdb, "replicate")
 ```
+![p2](https://user-images.githubusercontent.com/21171362/156878569-63dec937-d105-4349-a8cf-6e9b8aae5a2d.png)
+![p3](https://user-images.githubusercontent.com/21171362/156878571-978155f5-71e6-4a94-a392-c9497417e017.png)
 
 An alternative plot is the pyramid plot:
 
@@ -91,6 +96,8 @@ An alternative plot is the pyramid plot:
 plotHDSigmas(hdb, "individual")
 plotHDSigmas(hdb, "replicate")
 ```
+![p4](https://user-images.githubusercontent.com/21171362/156878578-7de5e1df-3db0-411d-a1a8-759916485146.png)
+![p5](https://user-images.githubusercontent.com/21171362/156878581-4e9347e6-8f00-45f0-9650-f9571c401c43.png)
 
 How do we interpret these numbers and plots? 
 
@@ -111,5 +118,8 @@ plotPCA(sce,
         colour_by = "replicate", 
         shape_by = "individual")
 ```
+
+![p6](https://user-images.githubusercontent.com/21171362/156878586-7fcece6a-467b-4007-b8a1-1ea0f9849261.png)
+
 
 We can see that replicate 2 (the orange group of cells), being absent from the group belonging to individual `NA19098`, is very distant from either groups of blue points (replicate 1), albeit closer to the group from `NA19239`. This means that the r2 group in `NA19239` (squares) may establish a NN (nearest neighbor) pair with either r1 from `NA19239` (squares) or r1 from `NA19098` (circles), whereas the r1 groups have only one choice (r2 in `NA19239`). 
