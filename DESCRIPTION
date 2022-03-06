@@ -14,7 +14,7 @@ Authors@R: c(person(given = "Giuseppe",
 Maintainer: Giuseppe D'Agostino <g.a.dagostino@gmail.com>
 Description: Uses the robust partial Hausdorff distance to preicsely estimate
     symmetric and asymmetric batch effects in high-dimensional genomics data.
-URL: https://github.com/langleylab/HDB
+URL: https://github.com/langleylab/H?DB
 BugReports: https://github.com/langleylab/HDB/issues
 License: MIT + file LICENSE
 Encoding: UTF-8

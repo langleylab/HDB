@@ -4,7 +4,13 @@
 \alias{.pHD}
 \title{Robust partial Hausdorff distance from distance matrix}
 \usage{
-.pHD(A, B, q)
+.pHD(
+  A,
+  B,
+  q,
+  distance = "Euclidean",
+  BNPARAM = KmknnParam(distance = distance)
+)
 }
 \arguments{
 \item{A}{a matrix with the target set of points}
@@ -12,6 +18,11 @@
 \item{B}{a matrix with the query set of points}
 
 \item{q}{numeric, the rank of the minimum distance for robust calculations}
+
+\item{distance}{string specifying the distance method, one of "Euclidean",
+"Cosine" or "Manhattan"}
+
+\item{BNPARAM}{a \code{BiocNeighborParam} class}
 }
 \value{
 a numeric with the Hausdorff distance from A to B

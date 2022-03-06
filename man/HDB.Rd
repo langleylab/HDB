@@ -8,13 +8,14 @@ HDB(
   sce,
   dimred = "PCA",
   group,
-  distmethod = "euclidean",
+  distance = "Euclidean",
   q = 3,
   dims = 20,
   nthreads = 1,
   fit = "linear",
   props = c(0.2, 0.4, 0.5, 0.6, 0.8),
   samples = 50,
+  BNPARAM = KmknnParam(distance = distance),
   doplot = TRUE,
   verbose = FALSE
 )
@@ -24,37 +25,54 @@ HDB(
 
 \item{dimred}{character, the name of the dimensional reduction slot}
 
-\item{group}{character or vector of characters containing the name(s) of the \code{colData} column containing the batch information}
+\item{group}{character or vector of characters containing the name(s) of the
+\code{colData} column containing the batch information}
 
-\item{distmethod}{character, the distance method to be used by \code{parDist}. Default is "euclidean", can be "cosine", "manhattan".}
+\item{distance}{string, the distance method to be used by
+the \code{BNPARAM}. Default is "Euclidean", can be "Cosine", "Manhattan".}
 
 \item{q}{numeric, the rank for robust pHD calculation}
 
-\item{dims}{numeric, the number of dimensions in the reduced dimension to be used}
+\item{dims}{numeric, the number of dimensions in the reduced dimension to
+be used}
 
-\item{nthreads}{numeric, the number of threads to be used for parallel computation. Default is \code{1}, which selects serial processing.}
+\item{nthreads}{numeric, the number of threads to be used for parallel
+computation. Default is \code{1}, which selects serial processing.}
 
 \item{fit}{character, one of \code{"linear"} (default) and \code{"nonlinear"}}
 
-\item{props}{vector of numerics, the relative proportions to be used for the null distribution estimation}
+\item{props}{vector of numerics, the relative proportions to be used for the
+null distribution estimation}
 
-\item{samples}{numeric, the number of iterations of label shuffling for every proportion. Default is \code{50}.}
+\item{samples}{numeric, the number of iterations of label shuffling for every
+proportion. Default is \code{50}.}
 
-\item{doplot}{logical, should the results be plotted at the end? Default is \code{TRUE}}
+\item{BNPARAM}{a \code{BiocNeighborParam} class. Inherits \code{distance}
+from the function argument. If different distances are specified, will
+default to the one specified in the BNPARAM.}
 
-\item{verbose}{logical, should the function return updates on its progress? This includes progress bars for parallel processing. Default is FALSE.}
+\item{doplot}{logical, should the results be plotted at the end? Default is
+\code{TRUE}}
+
+\item{verbose}{logical, should the function return updates on its progress?
+This includes progress bars for parallel processing. Default is FALSE.}
 }
 \value{
-The function returns a named list of results, one for each element of \code{group}, each list containing another list with the following items:
+The function returns a named list of results, one for each element of
+   \code{group}, each list containing another list with the following items:
  \itemize{
- \item{\code{model}}: a list of linear models, one for every pairwise pHD calculation within the group
- \item{\code{results}}: a data frame of pHD results, containing the pHD value and the number of standard deviations from the linear model (\code{sigmas})
- \item{\code{null}}: a list of null pHD distributions, one for every relative proportion within the group
+ \item{\code{model}}: a list of linear models, one for every pairwise pHD
+     calculation within the group
+ \item{\code{results}}: a data frame of pHD results, containing the pHD value
+      and the number of standard deviations from the linear
+     model (\code{sigmas})
+ \item{\code{null}}: a list of null pHD distributions, one for every relative
+ proportion within the group
 }
 }
 \description{
-Calculates the pairwise batch effect using the robust partial Hausdorff distance
-  measured against the null distribution of Hausdorff distances. The null distribution
-  is empirically calculated by permutation of the batch label at different
-  relative proportions.
+Calculates the pairwise batch effect using the robust partial Hausdorff
+   distance measured against the null distribution of Hausdorff distances.
+   The null distribution is empirically calculated by permutation of the
+   batch label at different relative proportions.
 }

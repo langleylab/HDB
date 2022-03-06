@@ -11,11 +11,13 @@ plotHDheatmap(hdb, group, rng = NULL)
 
 \item{group}{character containing the name of the \code{HDB} results list}
 
-\item{rng}{vector containing a range in the form \code{c(a, b)} where \code{a} and \code{b} contain the lower and upper bound of the scale.
+\item{rng}{vector containing a range in the form \code{c(a, b)} where
+\code{a} and \code{b} contain the lower and upper bound of the scale.
 Used to compare different heatmaps using the same scale.}
 }
 \value{
-a heatmap with pairwise sigma values for the HDB calculation within \code{group}.
+a heatmap with pairwise sigma values for the HDB calculation within
+   \code{group}.
 }
 \description{
 Plots the sigma values for every HDB comparison in a heatmap
