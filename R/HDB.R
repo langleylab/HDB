@@ -404,9 +404,6 @@ plotHDsigmas <- function(hdb, group, rng = NULL) {
 #' @param q numeric, the rank for robust pHD calculation
 #' @param dims numeric, the number of dimensions in the reduced dimension to
 #'    be used
-#' @param nthreads numeric, the number of threads to be used for parallel
-#'    computation. Default is \code{1}, which selects serial processing.
-#' @param fit character, one of \code{"linear"} (default) and \code{"nonlinear"}
 #' @param props vector of numerics, the relative proportions to be used for the
 #'    null distribution estimation
 #' @param samples numeric, the number of iterations of label shuffling for every
@@ -422,7 +419,7 @@ plotHDsigmas <- function(hdb, group, rng = NULL) {
 #' @importFrom SummarizedExperiment colData
 #' @importFrom SingleCellExperiment reducedDimNames reducedDim
 #' @importFrom BiocNeighbors KmknnParam bndistance
-#' @importFrom stats lm predict residuals sd
+#' @importFrom stats lm predict residuals sd pnorm rstandard
 #' @importFrom utils combn
 #'
 #' @return The function returns a named list of results, one for each element of
@@ -495,8 +492,8 @@ HDB <- function(sce, dimred="PCA", group, distance="Euclidean", q=3, dims=20,
 
     names(nullist) <- paste0(combs$A, "_", combs$B)
 
-    nullist_dfs <- lapply(seq_len(length(dens_sample)), function(x) {
-      df = data.frame("phd" = unlist(dens_sample[[x]]))
+    nullist_dfs <- lapply(seq_len(length(dens_select)), function(x) {
+      df = data.frame("phd" = unlist(dens_select[[x]]))
       df$prop = rep(props, each = samples)
       df$dens = rep(combs$dens[dens_select[x]], each = samples)
       return(df)
@@ -572,7 +569,7 @@ HDB <- function(sce, dimred="PCA", group, distance="Euclidean", q=3, dims=20,
     dat_df$sigmas = sigmas
     dat_df$pvalue = pvals
 
-    results[[g]] = list(model=nullmodels, results=dat_df, null=nullist_dfs)
+    results[[g]] = list(model=nullmodel, results=dat_df, null=nullist_dfs)
   }
   if(doplot) {
 
