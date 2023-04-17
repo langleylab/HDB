@@ -2,6 +2,23 @@
 
 ## Hausdorff Distance of Batches
 
+`HDB` is a package to diagnose batch effects in single cell RNA-seq data, although in principle it can be used more in general to estimate the overlap (or lack thereof) of sets of point clouds in a high dimensional space. 
+
+`HDB` is built on the notion of the [Hausdorff distance](https://en.wikipedia.org/wiki/Hausdorff_distance), which can be defined as the largest distance between two nearest neighbors of two sets of points. 
+
+In this package we use the **partial** and **robust** implementation of the Hausdorff distance:
+- **partial** (or directed) means we take the distance from A to B separately from the distance from B to A, as they highlight two different overlaps. 
+- **robust** means we do not take the absolute largest distance - as it can be greatly influenced by outliers - but rather the **k**-th largest distance. 
+
+The brunt of the approach in this package lies in the estimation of a null distance distribution to which the observed partial Hausdorff distance is compared, which also allows for statistical testing.
+
+Pending benchmarks on its speed and memory usage, the advantages of using HDB are the following:
+
+- it allows the estimation of asymmetric effects (such as additional cell types or cell states) as separate phenomena from the lack of overlap
+- it allows the quantification of effects with no upper bound, i.e. it has a large dynamic range  
+- it only requires one round of null model estimation for most groupings
+- it is flexible enough to be used for cluster labels, and can be easily extended to a single cell estimation (still under development)
+
 ### Installation
 
 Use `remotes::install_github("langleylab/HDB")` to install the package.
