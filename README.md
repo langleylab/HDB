@@ -21,7 +21,9 @@ Pending benchmarks on its speed and memory usage, the advantages of using HDB ar
 
 ### Etymology
 
-The name HDB is both an acronym for Hausdorff Distance of Batches, and a callback to Singapore's public housing, in which neighbors of different walks of life and communities come together to create the *kampong* spirit. It is, in a way, a real life example of nearest neighbors from different backgrounds.
+The name `HDB` is both an acronym for **Hausdorff Distance of Batches**, and a callback to Singapore's public housing, in which neighbors of different walks of life and communities come together to create the *kampong* spirit. 
+
+It is, in a way, a real life example of *nearest neighbors from different backgrounds*.
 
 
 ## Installation
