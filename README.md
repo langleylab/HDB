@@ -4,9 +4,7 @@
 
 ### Installation
 
-For the time being, clone the repo, go to the repo directory and launch R (or `setwd()` from R). 
-
-There, use `devtools::load_all()` to load the package.
+Use `remotes::install_github("langleylab/HDB")` to install the package.
 
 ### Usage
 
@@ -116,8 +114,8 @@ plotHDheatmap(hdb, "replicate")
 An alternative plot is the pyramid plot:
 
 ```{r}
-plotHDSigmas(hdb, "individual")
-plotHDSigmas(hdb, "replicate")
+plotHDsigmas(hdb, "individual")
+plotHDsigmas(hdb, "replicate")
 ```
 ![p4](https://user-images.githubusercontent.com/21171362/156878578-7de5e1df-3db0-411d-a1a8-759916485146.png)
 ![p5](https://user-images.githubusercontent.com/21171362/156878581-4e9347e6-8f00-45f0-9650-f9571c401c43.png)
@@ -146,3 +144,127 @@ plotPCA(sce,
 
 
 We can see that replicate 2 (the orange group of cells), being absent from the group belonging to individual `NA19098`, is very distant from either groups of blue points (replicate 1), albeit closer to the group from `NA19239`. This means that the r2 group in `NA19239` (squares) may establish a NN (nearest neighbor) pair with either r1 from `NA19239` (squares) or r1 from `NA19098` (circles), whereas the r1 groups have only one choice (r2 in `NA19239`). 
+
+
+## Model
+
+The batch effect is estimated as follows: for every couple of samples, we estimate the robust partial Hausdorff distance (i.e. the largest distance between two nearest neighbors) in a low-dimensional embedding such as PCA.
+
+As mentioned earlier, the partial Hausdorff distance is asymmetric, i.e. pHD(A,B) is different from pHD(B,A). 
+
+The pHD is then compared to a "null" distribution, i.e. the pHD for to well-mixed high-dimensional point sets, in the absence of systematic differences that drive the lack of overlap. We call this the "null pHD".
+
+The null pHD is still influenced by two key aspects of the points and their coordinates: 1) their relative proportion (e.g. A is 20% of the total of A and B, meaning B is 80%) and 2) their joint density (the number of points in the high-dimensional volume). 
+
+pHD from a high density sample to a low density sample will always be on average lower than its opposite even when the two samples are well mixed, i.e. they occupy the same space in a well distributed manner.
+
+To convince ourselves, we simulate two 10-dimensional Gaussian distributions, with equal mean and variance, the difference being that the X distribution is made of 5000 points and the Y distribution is made of 2000 points.
+
+```{r}
+set.seed(123)
+X = matrix(rnorm(5000 * 10, mean = 0, sd = 1), ncol = 10)
+Y = matrix(rnorm(2000 * 10, mean = 0, sd = 1), ncol = 10)
+```
+
+In `HDB`, we defined the internal function `.pHD` as follows:
+
+```{r}
+.pHD <- function(A, B, q, distance="Euclidean",
+                 BNPARAM=KmknnParam(distance=distance)){
+  nn = queryKNN(A, B, k=1, get.index=FALSE, BNPARAM=BNPARAM)
+  k = length(nn$distance) - q
+  return(sort(nn$distance)[k])
+}
+```
+
+Meaning it will take a reference dataset `A`, a query dataset `B`, and return the robust (rank = `1 - q`) partial Hausdorff distance from B to A. 
+
+```{r}
+.pHD(X, Y, q = 3)
+[1] 2.892433
+
+.pHD(Y, X, q = 3)
+[1] 3.223152
+```
+At this point we can generate a number of random distributions and see what the pHD looks like in either direction:
+
+```{r}
+set.seed(123)
+seeds = sample(seq_len(1000), size = 100, replace = FALSE)
+
+rdists = lapply(seeds, function(x) {
+  set.seed(x)
+  X = matrix(rnorm(5000 * 10, mean = 0, sd = 1), ncol = 10)
+  Y = matrix(rnorm(2000 * 10, mean = 0, sd = 1), ncol = 10)
+  return(list(X = X, Y = Y))
+})
+
+pHD_XY = lapply(rdists, function(l) {
+  .pHD(l$X, l$Y, q = 3)
+})
+
+pHD_YX = lapply(rdists, function(l) {
+  .pHD(l$Y, l$X, q = 3)
+})
+```
+
+Now we can visualize the distribution of both pHDs from 100 random 10-d Gaussians:
+
+```{r}
+ boxplot(list(xy = unlist(pHD_XY), yx = unlist(pHD_YX)), las = 1)
+```
+![image](https://user-images.githubusercontent.com/21171362/232579463-dfd03202-d5d8-4e00-9334-54679f43a360.png)
+
+As you can see, the Y to X pHD is systematically larger than X to Y, i.e. a higher density sample (X) will have to travel less to find a nearest neighbor in a lower density sample (Y) than vice versa. 
+
+This calculation only takes into account the *relative proportion* of point sets, since they occupy the same volume by construction. However, some real life datasets will not occupy the same volume, as they may be "more scattered" than others even within the same embedding. 
+
+We simulate this by looking at the pHD in a similar setting, only this time we change the variance of the 10-dimensional Gaussian:
+
+
+```{r}
+set.seed(123)
+seeds = sample(seq_len(1000), size = 100, replace = FALSE)
+
+rdists2 = lapply(seeds, function(x) {
+  set.seed(x)
+  X = matrix(rnorm(5000 * 10, mean = 0, sd = 4), ncol = 10)
+  Y = matrix(rnorm(2000 * 10, mean = 0, sd = 4), ncol = 10)
+  return(list(X = X, Y = Y))
+})
+
+pHD_XY2 = lapply(rdists2, function(l) {
+  .pHD(l$X, l$Y, q = 3)
+})
+
+pHD_YX2 = lapply(rdists2, function(l) {
+  .pHD(l$Y, l$X, q = 3)
+})
+```
+
+We plot the distributions again:
+
+```{r}
+ boxplot(list(xy2 = unlist(pHD_XY2), yx2 = unlist(pHD_YX2)), las = 1)
+```
+![image](https://user-images.githubusercontent.com/21171362/232584334-596080a7-b632-4fc0-b659-444262bfcc56.png)
+
+Note that by "inflating" the Gaussians we have also necessarily inflated their pHDs, as can be seen by the change in scale:
+
+```{r}
+ boxplot(list(xy = unlist(pHD_XY), yx = unlist(pHD_YX), 
+              xy2 = unlist(pHD_XY2), yx2 = unlist(pHD_YX2)), 
+              col = c(rep("deepskyblue", 2), 
+                      rep("salmon", 2)), 
+          las = 1)
+```
+
+![image](https://user-images.githubusercontent.com/21171362/232584680-8659671e-34f8-45da-b295-d0c95f9a1fd5.png)
+
+While quite intuitive in this example, this aspect is less easy to grasp once dealing with single cell data. Even though all cells are embedded in the same lower dimensional space, accounting for their differential proportion is not enough; some of these samples may occupy smaller or larger volumes regardless of how many cells they are comprised of. For this reason, we need to account for the **density** of samples on top of their proportion. 
+
+The **density** and **relative proportion** can be plugged into a simple linear model that is used to estimate how far from the null (i.e. well mixed samples in the absence of batch effects) our observed pHDs are, given the observed densities and relative proportions. A precise model would estimate the joint density of any pair of samples, take a vector of fixed relative proportions, and shuffle labels for every level of the proportions vector for 50/100 permutations calculating the pHD in both directions at every permutation. However, this becomes rather costly, as it scales quadratically with the number of group levels. 
+
+By taking 3 quantiles of joint density and 3 fixed relative proportions (such as 0.2, 0.5 and 0.8) and generating 3 * 3  = 9 sets of random label shuffling permutations, we can greatly reduce the computational cost shifting the burden on the number of cells rather than the number of samples. This approach is also amenable to cell downsampling as the density calculation still holds - although we expect the effect size to be reduced as sampling becomes more sparse. The bulk of the calculation is actually taken care of by the highly optimized `BiocNeighbors` library, and parallelization of the permutations is easily achieved through the `BiocParallel` library.
+
+

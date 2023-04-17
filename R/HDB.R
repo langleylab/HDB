@@ -471,15 +471,6 @@ HDB <- function(sce, dimred="PCA", group, distance="Euclidean", q=3, dims=20,
     combs = data.frame(t(combn(as.character(unique(colData(sce)[,g])), m=2)))
     colnames(combs) = c("A", "B")
 
-    nullist = list()
-
-    phds_1 = phds_2 = vector()
-
-    props_actual = c(apply(combn(table(colData(sce)[,g]), m=2), 2, function(x)
-      x[1]/(x[1] + x[2])),
-      apply(combn(table(colData(sce)[,g]), m=2), 2, function(x)
-        x[2]/(x[1] + x[2])))
-
     if(verbose) message("Calculating joint densities.\n")
     dens = getJointDensities(sce,
                              dimred = dimred,
@@ -488,12 +479,54 @@ HDB <- function(sce, dimred="PCA", group, distance="Euclidean", q=3, dims=20,
     combs$dens = dens
     combs = combs[order(combs$dens),]
 
-    dens_select = c(2, round(nrow(combs)/2)+1, nrow(combs))
+    if(nrow(combs) > 3) {
+      dens_select = unique(c(2, round(nrow(combs)/2)+1, nrow(combs)))
+    } else {
+      dens_select = seq_len(nrow(combs))
+    }
 
-    names(nullist) <- paste0(combs$A, "_", combs$B)
+    if(nthreads == 1) {
+      par_param = BiocParallel::SerialParam()
+    } else {
+      par_param = BiocParallel::MulticoreParam(workers = nthreads,
+                                               progressbar = verbose)
+    }
+
+    combs$props_AB = apply(combn(table(colData(sce)[,g]), m=2), 2, function(x)
+      x[1]/(x[1] + x[2]))
+    combs$props_BA = apply(combn(table(colData(sce)[,g]), m=2), 2, function(x)
+        x[2]/(x[1] + x[2]))
+
+    null_combs = expand.grid(combs$dens, props)
+    null_combs$A = rep(combs$A, table(as.numeric(null_combs[,1])))
+    null_combs$B = rep(combs$B, table(as.numeric(null_combs[,1])))
+
+    nullist = lapply(seq_len(nrow(null_combs)), function(j) {
+
+      space_j_A = space[which(colData(sce)[,g] == null_combs[j, "A"]), ]
+      space_j_B = space[which(colData(sce)[,g] == null_combs[j, "B"]), ]
+
+      space_j = rbind(space_j_A, space_j_B)
+
+      nulls = list()
+
+      for(i in seq_len(length(props))){
+        nulls[[i]] = BiocParallel::bplapply(seq_len(samples), function(x) {
+          row_prop = floor(nrow(space_j) * props[i])
+          sampled = sample(seq_len(nrow(space_j)), row_prop, replace=FALSE)
+          space_s_A = space_j[sampled, ]
+          space_s_B = space_j[-sampled, ]
+          pHD_AB = .pHD(A=space_s_B, B=space_s_A, q=q, BNPARAM=BNPARAM)
+          return(pHD_AB)
+        }, BPPARAM = par_param)
+      }
+      return(nulls)
+    })
+
+   names(nullist) <- paste0(combs$A, "_", combs$B)
 
     nullist_dfs <- lapply(seq_len(length(dens_select)), function(x) {
-      df = data.frame("phd" = unlist(dens_select[[x]]))
+      df = data.frame("phd" = unlist(nullist[[x]]))
       df$prop = rep(props, each = samples)
       df$dens = rep(combs$dens[dens_select[x]], each = samples)
       return(df)
@@ -507,7 +540,7 @@ HDB <- function(sce, dimred="PCA", group, distance="Euclidean", q=3, dims=20,
 
     if(verbose) message("Computing pHds for group ", g, "\n")
 
-    props <- vector()
+    props_actual <- vector()
     phds <- vector()
 
     comp_df <- expand.grid(unique(colData(sce)[,g]), unique(colData(sce)[,g]))
@@ -516,7 +549,7 @@ HDB <- function(sce, dimred="PCA", group, distance="Euclidean", q=3, dims=20,
     for(i in seq_len(nrow(comp_df))) {
       select_A = which(colData(sce)[,g] == comp_df[i, "A"])
       select_B = which(colData(sce)[,g] == comp_df[i, "B"])
-      props[i] = length(select_A) / (length(select_A) + length(select_B))
+      props_actual[i] = length(select_A) / (length(select_A) + length(select_B))
 
       space_j_A = space[select_A, ]
       space_j_B = space[select_B, ]
@@ -525,7 +558,7 @@ HDB <- function(sce, dimred="PCA", group, distance="Euclidean", q=3, dims=20,
     }
 
     dat_df = data.frame(phd=phds,
-                        prop=props,
+                        prop=props_actual,
                         from=as.character(comp_df$A),
                         to=as.character(comp_df$B))
 
@@ -571,6 +604,7 @@ HDB <- function(sce, dimred="PCA", group, distance="Euclidean", q=3, dims=20,
 
     results[[g]] = list(model=nullmodel, results=dat_df, null=nullist_dfs)
   }
+
   if(doplot) {
 
     plotHDsigmas(hdb=results,
