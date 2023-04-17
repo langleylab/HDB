@@ -19,11 +19,16 @@ Pending benchmarks on its speed and memory usage, the advantages of using HDB ar
 - it only requires one round of null model estimation for most groupings
 - it is flexible enough to be used for cluster labels, and can be easily extended to a single cell estimation (still under development)
 
-### Installation
+### Etymology
+
+The name HDB is both an acronym for Hausdorff Distance of Batches, and a callback to Singapore's public housing, in which neighbors of different walks of life and communities come together to create the *kampong* spirit. It is, in a way, a real life example of nearest neighbors from different backgrounds.
+
+
+## Installation
 
 Use `remotes::install_github("langleylab/HDB")` to install the package.
 
-### Usage
+## Usage
 
 The package contains one main function, `HDB()`, and two plotting functions (see below). 
 
@@ -39,7 +44,7 @@ hdb <- HDB(sce,
 
 For all the arugments, check the manual with `?HDB`.
            
-### Short tutorial
+## Short tutorial
 
 Here is a simple demonstration on how to use `HDB`. 
 
