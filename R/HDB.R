@@ -20,8 +20,7 @@
   return(sort(nn$distance)[k])
 }
 
-
-#' Hausdorff Distance of Batches
+#' Hausdorff Distance of Batches (old implementation)
 #'
 #' Calculates the pairwise batch effect using the robust partial Hausdorff
 #'    distance measured against the null distribution of Hausdorff distances.
@@ -71,7 +70,7 @@
 #' }
 #' @export
 
-HDB <- function(sce, dimred="PCA", group, distance="Euclidean", q=3, dims=20,
+HDB_old <- function(sce, dimred="PCA", group, distance="Euclidean", q=3, dims=20,
                 nthreads=1, fit="linear", props=c(0.2, 0.4, 0.5, 0.6, 0.8),
                 samples=50, BNPARAM=KmknnParam(distance=distance),
                 doplot=TRUE, verbose=FALSE) {
@@ -387,3 +386,200 @@ plotHDsigmas <- function(hdb, group, rng = NULL) {
 
   print(p)
 }
+
+
+#' Hausdorff Distance of Batches
+#'
+#' Calculates the pairwise batch effect using the robust partial Hausdorff
+#'    distance measured against the null distribution of Hausdorff distances.
+#'    The null distribution is empirically calculated by permutation of the
+#'    batch label at different relative proportions and joint densities.
+#'
+#' @param sce a SingleCellExperiment object
+#' @param dimred character, the name of the dimensional reduction slot
+#' @param group character or vector of characters containing the name(s) of the
+#'     \code{colData} column containing the batch information
+#' @param distance string, the distance method to be used by
+#'    the \code{BNPARAM}. Default is "Euclidean", can be "Cosine", "Manhattan".
+#' @param q numeric, the rank for robust pHD calculation
+#' @param dims numeric, the number of dimensions in the reduced dimension to
+#'    be used
+#' @param nthreads numeric, the number of threads to be used for parallel
+#'    computation. Default is \code{1}, which selects serial processing.
+#' @param fit character, one of \code{"linear"} (default) and \code{"nonlinear"}
+#' @param props vector of numerics, the relative proportions to be used for the
+#'    null distribution estimation
+#' @param samples numeric, the number of iterations of label shuffling for every
+#'    proportion. Default is \code{50}.
+#' @param BNPARAM a \code{BiocNeighborParam} class. Inherits \code{distance}
+#'    from the function argument. If different distances are specified, will
+#'    default to the one specified in the BNPARAM.
+#' @param doplot logical, should the results be plotted at the end? Default is
+#'    \code{TRUE}
+#' @param verbose logical, should the function return updates on its progress?
+#'    This includes progress bars for parallel processing. Default is FALSE.
+#'
+#' @importFrom SummarizedExperiment colData
+#' @importFrom SingleCellExperiment reducedDimNames reducedDim
+#' @importFrom BiocNeighbors KmknnParam bndistance
+#' @importFrom stats lm predict residuals sd
+#' @importFrom utils combn
+#'
+#' @return The function returns a named list of results, one for each element of
+#'    \code{group}, each list containing another list with the following items:
+#'  \itemize{
+#'  \item{\code{model}}: a list of linear models, one for every pairwise pHD
+#'      calculation within the group
+#'  \item{\code{results}}: a data frame of pHD results, containing the pHD value
+#'       and the number of standard deviations from the linear
+#'      model (\code{sigmas})
+#'  \item{\code{null}}: a list of null pHD distributions, one for every relative
+#'  proportion within the group
+#' }
+#' @export
+
+HDB <- function(sce, dimred="PCA", group, distance="Euclidean", q=3, dims=20,
+                 props=c(0.2, 0.5, 0.8),
+                 samples=50, BNPARAM=KmknnParam(distance=distance),
+                 doplot=TRUE, verbose=FALSE) {
+
+  # Checks
+  match.arg(group, colnames(colData(sce)), several.ok=TRUE)
+  match.arg(dimred, reducedDimNames(sce), several.ok=FALSE)
+
+  if(any(props >= 1) | any(props <= 0)) {
+    stop("props must be between 0 and 1 excluded")
+  }
+
+  for(g in group) {
+    if(any(table(colData(sce)[,g]) < q)) {
+      stop("q cannot be higher than the size of a group")
+    }
+  }
+
+  if(bndistance(BNPARAM) != distance){
+    message("Conflicting distance methods found - will default to the method
+            specified in BNPARAM")
+    distance = bndistance(BNPARAM)
+  }
+
+  space = reducedDim(sce, dimred)[, seq_len(dims), drop = FALSE]
+
+  results <- list()
+
+  for(g in group){
+
+    if(verbose) message("Computing null distributions for group ", g, "\n")
+
+    combs = data.frame(t(combn(as.character(unique(colData(sce)[,g])), m=2)))
+    colnames(combs) = c("A", "B")
+
+    nullist = list()
+
+    phds_1 = phds_2 = vector()
+
+    props_actual = c(apply(combn(table(colData(sce)[,g]), m=2), 2, function(x)
+      x[1]/(x[1] + x[2])),
+      apply(combn(table(colData(sce)[,g]), m=2), 2, function(x)
+        x[2]/(x[1] + x[2])))
+
+    if(verbose) message("Calculating joint densities.\n")
+    dens = getJointDensities(sce,
+                             dimred = dimred,
+                             group = g,
+                             combs = combs, verbose = verbose)
+    combs$dens = dens
+    combs = combs[order(combs$dens),]
+
+    dens_select = c(2, round(nrow(combs)/2)+1, nrow(combs))
+
+    names(nullist) <- paste0(combs$A, "_", combs$B)
+
+    nullist_dfs <- lapply(seq_len(length(dens_sample)), function(x) {
+      df = data.frame("phd" = unlist(dens_sample[[x]]))
+      df$prop = rep(props, each = samples)
+      df$dens = rep(combs$dens[dens_select[x]], each = samples)
+      return(df)
+    })
+
+    null_df = do.call(rbind, nullist_dfs)
+
+    if(verbose) message("Computing null models for group ", g, "\n")
+
+    nullmodel <- lm(data=null_df, formula = phd ~ prop + dens)
+
+    if(verbose) message("Computing pHds for group ", g, "\n")
+
+    props <- vector()
+    phds <- vector()
+
+    comp_df <- expand.grid(unique(colData(sce)[,g]), unique(colData(sce)[,g]))
+    colnames(comp_df) <- c("A", "B")
+
+    for(i in seq_len(nrow(comp_df))) {
+      select_A = which(colData(sce)[,g] == comp_df[i, "A"])
+      select_B = which(colData(sce)[,g] == comp_df[i, "B"])
+      props[i] = length(select_A) / (length(select_A) + length(select_B))
+
+      space_j_A = space[select_A, ]
+      space_j_B = space[select_B, ]
+
+      phds[i] = .pHD(A=space_j_B, B=space_j_A, q=q, BNPARAM=BNPARAM)
+    }
+
+    dat_df = data.frame(phd=phds,
+                        prop=props,
+                        from=as.character(comp_df$A),
+                        to=as.character(comp_df$B))
+
+    dat_df$comps = rownames(dat_df) = paste0(dat_df$from, "_", dat_df$to)
+
+    dat_df$dens = sapply(seq_len(nrow(dat_df)), function(x)
+      combs$dens[combs$A %in% dat_df[x, c("from", "to")] & combs$B %in% dat_df[x, c("from", "to")]])
+    dat_df$dens[dat_df$phd == 0] <- NA
+    dat_df$dens <- unlist(dat_df$dens)
+
+    dists = vector()
+    sigmas = vector()
+    pvals = vector()
+
+    for(i in seq_len(nrow(dat_df))) {
+
+      p1 = dat_df[i,5]
+      p2 = paste0(dat_df[i,4], "_", dat_df[i,3])
+
+      if(p1 == p2) {
+        dists[i] = NA
+        sigmas[i] = NA
+        pvals[i] = NA
+      } else {
+
+
+        dists[i] = dat_df$phd[i] - predict(newdata=data.frame(prop=dat_df$prop[i], dens = dat_df$dens[i]),
+                                           object=nullmodel)
+
+        sigmas[i] = dists[i]/sd(residuals(nullmodel))
+
+        z = (dists[i] - mean(residuals(nullmodel)))/sd(residuals(nullmodel))
+
+        pvals[i] = pnorm(z, mean = mean(rstandard(nullmodel)),
+                         sd = sd(rstandard(nullmodel)), lower.tail = FALSE)
+
+      }
+    }
+
+    dat_df$dist = dists
+    dat_df$sigmas = sigmas
+    dat_df$pvalue = pvals
+
+    results[[g]] = list(model=nullmodels, results=dat_df, null=nullist_dfs)
+  }
+  if(doplot) {
+
+    plotHDsigmas(hdb=results,
+                 group=g)
+  }
+
+  return(results)
+}
+
