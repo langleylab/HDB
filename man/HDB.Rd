@@ -14,6 +14,7 @@ HDB(
   props = c(0.2, 0.5, 0.8),
   samples = 50,
   BNPARAM = KmknnParam(distance = distance),
+  BPPARAM = SerialParam(),
   doplot = TRUE,
   verbose = FALSE
 )
@@ -44,11 +45,14 @@ proportion. Default is \code{50}.}
 from the function argument. If different distances are specified, will
 default to the one specified in the BNPARAM.}
 
+\item{BPPARAM}{a \code{BiocParallel} param class. Default is \code{SerialParam()}
+meaning no parallelization is implemented.}
+
 \item{doplot}{logical, should the results be plotted at the end? Default is
 \code{TRUE}}
 
 \item{verbose}{logical, should the function return updates on its progress?
-This includes progress bars for parallel processing. Default is FALSE.}
+Default is FALSE.}
 }
 \value{
 The function returns a named list of results, one for each element of

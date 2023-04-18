@@ -411,14 +411,17 @@ plotHDsigmas <- function(hdb, group, rng = NULL) {
 #' @param BNPARAM a \code{BiocNeighborParam} class. Inherits \code{distance}
 #'    from the function argument. If different distances are specified, will
 #'    default to the one specified in the BNPARAM.
+#' @param BPPARAM a \code{BiocParallel} param class. Default is \code{SerialParam()}
+#'    meaning no parallelization is implemented.
 #' @param doplot logical, should the results be plotted at the end? Default is
 #'    \code{TRUE}
 #' @param verbose logical, should the function return updates on its progress?
-#'    This includes progress bars for parallel processing. Default is FALSE.
+#'    Default is FALSE.
 #'
 #' @importFrom SummarizedExperiment colData
 #' @importFrom SingleCellExperiment reducedDimNames reducedDim
 #' @importFrom BiocNeighbors KmknnParam bndistance
+#' @importFrom BiocParallel SerialParam
 #' @importFrom stats lm predict residuals sd pnorm rstandard
 #' @importFrom utils combn
 #'
@@ -437,7 +440,7 @@ plotHDsigmas <- function(hdb, group, rng = NULL) {
 
 HDB <- function(sce, dimred="PCA", group, distance="Euclidean", q=3, dims=20,
                  props=c(0.2, 0.5, 0.8),
-                 samples=50, BNPARAM=KmknnParam(distance=distance),
+                 samples=50, BNPARAM=KmknnParam(distance=distance), BPPARAM=SerialParam(),
                  doplot=TRUE, verbose=FALSE) {
 
   # Checks
@@ -485,13 +488,6 @@ HDB <- function(sce, dimred="PCA", group, distance="Euclidean", q=3, dims=20,
       dens_select = seq_len(nrow(combs))
     }
 
-    if(nthreads == 1) {
-      par_param = BiocParallel::SerialParam()
-    } else {
-      par_param = BiocParallel::MulticoreParam(workers = nthreads,
-                                               progressbar = verbose)
-    }
-
     combs$props_AB = apply(combn(table(colData(sce)[,g]), m=2), 2, function(x)
       x[1]/(x[1] + x[2]))
     combs$props_BA = apply(combn(table(colData(sce)[,g]), m=2), 2, function(x)
@@ -518,7 +514,7 @@ HDB <- function(sce, dimred="PCA", group, distance="Euclidean", q=3, dims=20,
           space_s_B = space_j[-sampled, ]
           pHD_AB = .pHD(A=space_s_B, B=space_s_A, q=q, BNPARAM=BNPARAM)
           return(pHD_AB)
-        }, BPPARAM = par_param)
+        }, BPPARAM = BPPARAM)
       }
       return(nulls)
     })
