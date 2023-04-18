@@ -299,7 +299,7 @@ $$
 
 where $A'$ and $B'$ indicate null distribution sampels, and $\epsilon$ are the residuals of the model. 
 
-Then, the batch effect (BE) is calculated as follows. We plug the observed values of $\pi(A,B)$ and $\rho(A,B)$ in the model for every pHD(A,B) and determine the distance between the distance $\delta$ between the observed pHD and the predicted null pHD in the model. Then, we look at how many standard deviations (sigmas) are contained within $\delta(A,B)$.
+Then, the batch effect (BE) is calculated as follows. We plug the observed values of $\pi(A,B)$ and $\rho(A,B)$ in the model for every pHD(A,B) and determine the distance $\delta$ between the observed pHD and the predicted null pHD in the model. Then, we look at how many standard deviations (sigmas) are contained within $\delta(A,B)$.
 
 $$
 \mathrm{BE}(A,B) = \frac{\delta(A,B)}{\sigma_{\epsilon}}
