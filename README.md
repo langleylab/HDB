@@ -291,4 +291,26 @@ The **density** and **relative proportion** can be plugged into a simple linear 
 
 By taking 3 quantiles of joint density and 3 fixed relative proportions (such as 0.2, 0.5 and 0.8) and generating 3 * 3  = 9 sets of random label shuffling permutations, we can greatly reduce the computational cost shifting the burden on the number of cells rather than the number of samples. This approach is also amenable to cell downsampling as the density calculation still holds - although we expect the effect size to be reduced as sampling becomes more sparse. The bulk of the calculation is actually taken care of by the highly optimized `BiocNeighbors` library, and parallelization of the permutations is easily achieved through the `BiocParallel` library.
 
+Once distributions of null pHDs are obtained for all 9 combinations of relative proportions $\pi(A',B')$ and joint densities $\rho(A',B')$ for a given number of permutations, these are plugged into a linear model as follows:
 
+$$
+\mathrm{pHD}_{null}(A', B') \sim \pi(A',B') + \rho(A',B') + \epsilon
+$$
+
+where $A'$ and $B'$ indicate null distribution sampels, and $\epsilon$ are the residuals of the model. 
+
+Then, the batch effect (BE) is calculated as follows. We plug the observed values of $\pi(A,B)$ and $\rho(A,B)$ in the model for every pHD(A,B) and determine the distance between the distance $\delta$ between the observed pHD and the predicted null pHD in the model. Then, we look at how many standard deviations (sigmas) are contained within $\delta(A,B)$.
+
+$$
+\mathrm{BE}(A,B) = \frac{\delta(A,B)}{\sigma_{\epsilon}}
+$$
+
+where $\sigma_{\epsilon}$ is the standard deviation of the residuals. 
+
+To obtain a p-value (H0: samples are well mixed, i.e. the observed pHD comes from a null distribution) we calculate a Z-statistic for the observed $\delta$ given the null model residuals, and its relative p-value:
+
+$$
+Z(A,B) = \frac{\delta(A,B) - \mu_{\epsilon}}{\sigma_{\epsilon}}
+$$
+
+`HDB` does this calculation in both directions: A,B and B,A, so the resulting table will contain values of `dist` ($\delta$), `sigmas` and p-values in either direction. 

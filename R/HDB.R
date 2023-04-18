@@ -428,13 +428,13 @@ plotHDsigmas <- function(hdb, group, rng = NULL) {
 #' @return The function returns a named list of results, one for each element of
 #'    \code{group}, each list containing another list with the following items:
 #'  \itemize{
-#'  \item{\code{model}}: a list of linear models, one for every pairwise pHD
-#'      calculation within the group
+#'  \item{\code{model}}: an object of class \code{lm} containing the linear model
+#'      used to determine the batch effect sigmas and residuals
 #'  \item{\code{results}}: a data frame of pHD results, containing the pHD value
 #'       and the number of standard deviations from the linear
-#'      model (\code{sigmas})
-#'  \item{\code{null}}: a list of null pHD distributions, one for every relative
-#'  proportion within the group
+#'      model (\code{sigmas}) and the nominal p-value
+#'  \item{\code{null}}: a list of null pHD distributions, one for every joint density
+#'  within the group
 #' }
 #' @export
 
