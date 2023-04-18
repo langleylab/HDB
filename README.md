@@ -237,7 +237,8 @@ Now we can visualize the distribution of both pHDs from 100 random 10-d Gaussian
 ```{r}
  boxplot(list(xy = unlist(pHD_XY), yx = unlist(pHD_YX)), las = 1)
 ```
-![image](https://user-images.githubusercontent.com/21171362/232579463-dfd03202-d5d8-4e00-9334-54679f43a360.png)
+
+<img src="https://user-images.githubusercontent.com/21171362/232579463-dfd03202-d5d8-4e00-9334-54679f43a360.png" width="200" />
 
 As you can see, the Y to X pHD is systematically larger than X to Y, i.e. a higher density sample (X) will have to travel less to find a nearest neighbor in a lower density sample (Y) than vice versa. 
 
@@ -271,7 +272,7 @@ We plot the distributions again:
 ```{r}
  boxplot(list(xy2 = unlist(pHD_XY2), yx2 = unlist(pHD_YX2)), las = 1)
 ```
-![image](https://user-images.githubusercontent.com/21171362/232584334-596080a7-b632-4fc0-b659-444262bfcc56.png)
+<img src="https://user-images.githubusercontent.com/21171362/232584334-596080a7-b632-4fc0-b659-444262bfcc56.png" width="200" />
 
 Note that by "inflating" the Gaussians we have also necessarily inflated their pHDs, as can be seen by the change in scale:
 
@@ -283,7 +284,7 @@ Note that by "inflating" the Gaussians we have also necessarily inflated their p
           las = 1)
 ```
 
-![image](https://user-images.githubusercontent.com/21171362/232584680-8659671e-34f8-45da-b295-d0c95f9a1fd5.png)
+<img src="https://user-images.githubusercontent.com/21171362/232584680-8659671e-34f8-45da-b295-d0c95f9a1fd5.png" width="200" />
 
 While quite intuitive in this example, this aspect is less easy to grasp once dealing with single cell data. Even though all cells are embedded in the same lower dimensional space, accounting for their differential proportion is not enough; some of these samples may occupy smaller or larger volumes regardless of how many cells they are comprised of. For this reason, we need to account for the **density** of samples on top of their proportion. 
 
