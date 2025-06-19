@@ -1,15 +1,12 @@
-<img src="https://user-images.githubusercontent.com/21171362/235703024-418612df-68ca-4a8d-8882-b60247ce57d4.png" align="right" alt="" width="200" />
-
+<img src="https://user-images.githubusercontent.com/21171362/235703024-418612df-68ca-4a8d-8882-b60247ce57d4.png" align="right" alt="" width="200px"/>
 <div id="toc">
 	<ul align="left" style="list-style: none;">
 		<summary>
-			<h1>HDB</h1>
+			<h1>HDB</h1> <br>
+			<h2>Hausdorff Distance of Batches</h2>
 		</summary>
 	</ul>
 </div>
-
-
-## Hausdorff Distance of Batches
 
 `HDB` is a package to diagnose batch effects in single cell RNA-seq data, although in principle it can be used more in general to estimate the overlap (or lack thereof) of sets of point clouds in a high dimensional space. 
 
